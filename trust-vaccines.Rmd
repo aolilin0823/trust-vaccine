@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(readr)
 library(ggplot2)
+library(knitr)
 
 ed_levels<-c(
   "Primary school",
@@ -39,6 +40,17 @@ d_trustvac <- read_csv(
     col_factor(ordered = TRUE,levels = likert_levels),
     col_factor(ordered = TRUE,levels = likert_levels),
   ))
+
+d_trustvac<-d_trustvac%>%
+  mutate(
+    across(
+      .cols = c(starts_with('gov'),starts_with('vac')),
+      .fns = as.numeric,
+      .names = '{.col}_coded'
+    )
+  )
+
+  
 ```
 
 ## gender
@@ -62,5 +74,49 @@ d_trustvac%>%
             SD=sd(age)%>% round(digits = 2))
 d_trustvac %>%
   ggplot(aes(x= age))+geom_histogram(binwidth = 5)
+```
+
+## Higest educational qualifications
+```{r}
+d_trustvac %>%
+  count(hhedqual)
+
+
+d_trustvac %>%
+  ggplot(aes(x=hhedqual))+
+  geom_bar()+coord_flip()
+```
+
+## Descriptive statistics: Likert items
+```{r}
+tibble(
+  d_trustvac$govhonest,
+  as.numeric(d_trustvac$govhonest))%>%
+  kable()
+
+d_trustvac$govhonest %>%
+  as.numeric()%>%
+  median(na.rm = TRUE)
+
+
+trust_likert_summary<-d_trustvac%>%
+  select(ends_with('_coded'))%>%
+  lapply(
+    median,
+    na.rm= TRUE
+  )
+d_trust_likert_summary<- trust_likert_summary%>%
+  tibble(
+    item= trust_likert_summary%>%names,
+    median=trust_likert_summary%>%unlist
+  )
+d_trust_likert_summary
+
+d_trust_likert_summary%>%
+  ggplot(
+    aes(x=item,y=median)
+  )+
+  geom_point()+
+  coord_flip()
 ```
 
